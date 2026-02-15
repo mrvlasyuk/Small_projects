@@ -1,144 +1,256 @@
-4,
-                    (Math.random() - 0.5) * 0.4
-                );
-                
-                // Determine final result
-                die.result = Math.floor(Math.random() * 6) + 1;
-            });
-            
-            // Animate for 3 seconds
-            const startTime = Date.now();
-            const duration = 3000;
-            
-            function animateRoll() {
-                const elapsed = Date.now() - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                
-                dice.forEach(die => {
-                    if (!die.isRolling) return;
-                    
-                    // Apply gravity
-                    die.velocity.y -= 0.015;
-                    
-                    // Update position
-                    die.mesh.position.add(die.velocity);
-                    
-                    // Update rotation
-                    die.mesh.rotation.x += die.angularVelocity.x;
-                    die.mesh.rotation.y += die.angularVelocity.y;
-                    die.mesh.rotation.z += die.angularVelocity.z;
-                    
-                    // Floor collision
-                    if (die.mesh.position.y < 0.75) {
-                        die.mesh.position.y = 0.75;
-                        die.velocity.y *= -0.5;
-                        die.velocity.x *= 0.8;
-                        die.velocity.z *= 0.8;
-                        die.angularVelocity.multiplyScalar(0.8);
-                        
-                        // Stop if slow enough
-                        if (Math.abs(die.velocity.y) < 0.05 && die.angularVelocity.length() < 0.05) {
-                            die.isRolling = false;
-                        }
-                    }
-                    
-                    // Wall collision
-                    if (Math.abs(die.mesh.position.x) > 8) {
-                        die.velocity.x *= -0.6;
-                        die.mesh.position.x = Math.sign(die.mesh.position.x) * 8;
-                    }
-                    if (Math.abs(die.mesh.position.z) > 5) {
-                        die.velocity.z *= -0.6;
-                        die.mesh.position.z = Math.sign(die.mesh.position.z) * 5;
-                    }
-                });
-                
-                if (progress < 1 || dice.some(d => d.isRolling)) {
-                    requestAnimationFrame(animateRoll);
-                } else {
-                    // Snap to final rotation based on result
-                    dice.forEach((die, index) => {
-                        snapToResult(die, die.result);
-                    });
-                    
-                    setTimeout(() => {
-                        const total = dice.reduce((sum, die) => sum + die.result, 0);
-                        document.getElementById('total').textContent = total;
-                        document.getElementById('result').classList.add('show');
-                        
-                        btn.disabled = false;
-                        btn.textContent = '🎲 БРОСИТЬ!';
-                        isRolling = false;
-                    }, 500);
-                }
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎲 3D Бросок Костей</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: white;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(255,255,255,0.3);
+        }
+        .subtitle {
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        .controls {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .dice-count {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .counter {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 15px;
+            padding: 10px 20px;
+        }
+        .counter button {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(145deg, #ff6b6b, #ee5a5a);
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .counter button:hover {
+            transform: translateY(-2px);
+        }
+        .counter span {
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+        .roll-btn {
+            padding: 18px 50px;
+            font-size: 1.4em;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .roll-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(245,87,108,0.7);
+        }
+        .roll-btn:disabled {
+            opacity: 0.7;
+        }
+        .dice-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 40px;
+            min-height: 200px;
+            padding: 30px;
+            perspective: 1000px;
+        }
+        .dice {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            transform-style: preserve-3d;
+        }
+        .dice.rolling {
+            animation: roll3d 0.6s linear infinite;
+        }
+        @keyframes roll3d {
+            0% { transform: rotateX(0) rotateY(0) rotateZ(0); }
+            100% { transform: rotateX(720deg) rotateY(360deg) rotateZ(180deg); }
+        }
+        .face {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(145deg, #fff 0%, #e6e6e6 100%);
+            border-radius: 15px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 12px;
+        }
+        .face-front { transform: translateZ(50px); }
+        .face-back { transform: rotateY(180deg) translateZ(50px); }
+        .face-right { transform: rotateY(90deg) translateZ(50px); }
+        .face-left { transform: rotateY(-90deg) translateZ(50px); }
+        .face-top { transform: rotateX(90deg) translateZ(50px); }
+        .face-bottom { transform: rotateX(-90deg) translateZ(50px); }
+        .dot {
+            width: 16px;
+            height: 16px;
+            background: #333;
+            border-radius: 50%;
+            place-self: center;
+        }
+        .dot.red { background: #e74c3c; }
+        .face-1 .dot:nth-child(1) { grid-area: 2/2; }
+        .face-2 .dot:nth-child(1) { grid-area: 1/1; }
+        .face-2 .dot:nth-child(2) { grid-area: 3/3; }
+        .face-3 .dot:nth-child(1) { grid-area: 1/1; }
+        .face-3 .dot:nth-child(2) { grid-area: 2/2; }
+        .face-3 .dot:nth-child(3) { grid-area: 3/3; }
+        .face-4 .dot:nth-child(1) { grid-area: 1/1; }
+        .face-4 .dot:nth-child(2) { grid-area: 1/3; }
+        .face-4 .dot:nth-child(3) { grid-area: 3/1; }
+        .face-4 .dot:nth-child(4) { grid-area: 3/3; }
+        .face-5 .dot:nth-child(1) { grid-area: 1/1; }
+        .face-5 .dot:nth-child(2) { grid-area: 1/3; }
+        .face-5 .dot:nth-child(3) { grid-area: 2/2; }
+        .face-5 .dot:nth-child(4) { grid-area: 3/1; }
+        .face-5 .dot:nth-child(5) { grid-area: 3/3; }
+        .face-6 .dot:nth-child(1) { grid-area: 1/1; }
+        .face-6 .dot:nth-child(2) { grid-area: 1/3; }
+        .face-6 .dot:nth-child(3) { grid-area: 2/1; }
+        .face-6 .dot:nth-child(4) { grid-area: 2/3; }
+        .face-6 .dot:nth-child(5) { grid-area: 3/1; }
+        .face-6 .dot:nth-child(6) { grid-area: 3/3; }
+        .result {
+            margin-top: 30px;
+            font-size: 1.5em;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s;
+        }
+        .result.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .total {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 30px rgba(255,215,0,0.8);
+        }
+    </style>
+</head>
+<body>
+    <h1>🎲 3D Бросок Костей</h1>
+    <p class="subtitle">Настоящие 3D кубики с анимацией!</p>
+    <div class="controls">
+        <div class="dice-count">
+            <label>Количество костей:</label>
+            <div class="counter">
+                <button id="minus" onclick="changeCount(-1)">−</button>
+                <span id="count">2</span>
+                <button id="plus" onclick="changeCount(1)">+</button>
+            </div>
+        </div>
+        <button class="roll-btn" id="rollBtn" onclick="rollDice()">🎲 БРОСИТЬ!</button>
+    </div>
+    <div class="dice-container" id="diceContainer"></div>
+    <div class="result" id="result">
+        <div>Сумма: <span class="total" id="total">0</span></div>
+    </div>
+    <script>
+        let diceCount=2,isRolling=false;
+        function createDiceHTML(i){
+            return `<div class="dice" id="dice-${i}">
+                <div class="face face-front face-1"><div class="dot red"></div></div>
+                <div class="face face-back face-6"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+                <div class="face face-right face-2"><div class="dot"></div><div class="dot"></div></div>
+                <div class="face face-left face-5"><div class="dot red"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+                <div class="face face-top face-3"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+                <div class="face face-bottom face-4"><div class="dot red"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+            </div>`;
+        }
+        function renderDice(){
+            const c=document.getElementById('diceContainer');
+            c.innerHTML='';
+            for(let i=0;i<diceCount;i++)c.innerHTML+=createDiceHTML(i);
+            document.getElementById('result').classList.remove('show');
+        }
+        function changeCount(d){
+            if(isRolling)return;
+            const n=diceCount+d;
+            if(n>=1&&n<=6){
+                diceCount=n;
+                document.getElementById('count').textContent=n;
+                document.getElementById('minus').disabled=n===1;
+                document.getElementById('plus').disabled=n===6;
+                renderDice();
             }
-            
-            animateRoll();
         }
-
-        function snapToResult(die, result) {
-            const targetRotations = {
-                1: { x: 0, y: 0, z: 0 },
-                2: { x: 0, y: Math.PI / 2, z: 0 },
-                3: { x: -Math.PI / 2, y: 0, z: 0 },
-                4: { x: Math.PI / 2, y: 0, z: 0 },
-                5: { x: 0, y: -Math.PI / 2, z: 0 },
-                6: { x: Math.PI, y: 0, z: 0 }
-            };
-            
-            const target = targetRotations[result];
-            
-            // Smooth animation to final position
-            const startRot = die.mesh.rotation.clone();
-            const startTime = Date.now();
-            const duration = 300;
-            
-            function snap() {
-                const elapsed = Date.now() - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                const ease = 1 - Math.pow(1 - progress, 3);
-                
-                die.mesh.rotation.x = startRot.x + (target.x - startRot.x) * ease;
-                die.mesh.rotation.y = startRot.y + (target.y - startRot.y) * ease;
-                die.mesh.rotation.z = startRot.z + (target.z - startRot.z) * ease;
-                
-                if (progress < 1) {
-                    requestAnimationFrame(snap);
-                }
+        async function rollDice(){
+            if(isRolling)return;
+            isRolling=true;
+            const btn=document.getElementById('rollBtn');
+            btn.disabled=true;btn.textContent='🎲 Крутятся...';
+            document.getElementById('result').classList.remove('show');
+            const results=[];
+            for(let i=0;i<diceCount;i++){
+                document.getElementById(`dice-${i}`).classList.add('rolling');
+                results.push(Math.floor(Math.random()*6)+1);
             }
-            
-            snap();
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            // Gentle floating animation for idle dice
-            if (!isRolling) {
-                dice.forEach((die, index) => {
-                    const time = Date.now() * 0.001;
-                    die.mesh.position.y = 0.75 + Math.sin(time + index * 0.5) * 0.05;
-                    die.mesh.rotation.y += 0.005;
-                });
+            await new Promise(r=>setTimeout(r,2000));
+            let total=0;
+            const rot={1:'rotateX(0) rotateY(0)',2:'rotateX(0) rotateY(-90deg)',3:'rotateX(-90deg) rotateY(0)',4:'rotateX(90deg) rotateY(0)',5:'rotateX(0) rotateY(90deg)',6:'rotateX(180deg) rotateY(0)'};
+            for(let i=0;i<diceCount;i++){
+                const d=document.getElementById(`dice-${i}`);
+                d.classList.remove('rolling');
+                d.style.transform=rot[results[i]];
+                d.style.transition='transform 0.5s ease-out';
+                total+=results[i];
             }
-            
-            renderer.render(scene, camera);
+            setTimeout(()=>{
+                document.getElementById('total').textContent=total;
+                document.getElementById('result').classList.add('show');
+                btn.disabled=false;btn.textContent='🎲 БРОСИТЬ!';
+                isRolling=false;
+            },600);
         }
-
-        function onWindowResize() {
-            const container = document.getElementById('canvas-container');
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
-        }
-
-        // Initialize on load
-        window.addEventListener('load', init);
-        
-        // Initialize immediately if already loaded
-        if (document.readyState === 'complete') {
-            init();
-        }
+        renderDice();
     </script>
 </body>
-                </html>
+</html>
