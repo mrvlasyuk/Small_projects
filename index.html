@@ -1,81 +1,318 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Статическая страница</title>
-  <style>
-    :root {
-      color-scheme: light;
-      font-family: "Inter", "Segoe UI", sans-serif;
-      background: #f6f7fb;
-      color: #1a1c24;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 20px;
-    }
-
-    .card {
-      max-width: 680px;
-      background: #ffffff;
-      padding: 36px;
-      border-radius: 20px;
-      box-shadow: 0 18px 50px rgba(20, 28, 45, 0.12);
-      display: grid;
-      gap: 20px;
-    }
-
-    h1 {
-      font-size: 2.2rem;
-      margin: 0;
-    }
-
-    p {
-      margin: 0;
-      font-size: 1.1rem;
-      line-height: 1.6;
-      color: #3a4157;
-    }
-
-    ul {
-      margin: 0;
-      padding-left: 20px;
-      color: #3a4157;
-      line-height: 1.6;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: #eef2ff;
-      color: #3b4fdc;
-      font-weight: 600;
-      padding: 6px 12px;
-      border-radius: 999px;
-      width: fit-content;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎲 Бросок Костей</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: white;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: fadeInDown 0.8s ease;
+        }
+        .subtitle {
+            opacity: 0.9;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .controls {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            animation: fadeInUp 0.8s ease 0.2s both;
+        }
+        .dice-count {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .dice-count label {
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        .counter {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 15px;
+            padding: 10px 20px;
+        }
+        .counter button {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 10px;
+            background: #ff6b6b;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+        }
+        .counter button:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+        .counter button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .counter span {
+            font-size: 1.8em;
+            font-weight: bold;
+            min-width: 30px;
+            text-align: center;
+        }
+        .roll-btn {
+            padding: 18px 50px;
+            font-size: 1.4em;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(245,87,108,0.5);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .roll-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(245,87,108,0.6);
+        }
+        .roll-btn:disabled {
+            opacity: 0.7;
+            cursor: wait;
+        }
+        .dice-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 25px;
+            min-height: 200px;
+            padding: 30px;
+            animation: fadeIn 1s ease 0.4s both;
+        }
+        .dice {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s ease;
+        }
+        .dice.rolling {
+            animation: shake 0.5s ease-in-out infinite;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            10% { transform: translateX(-10px) rotate(-10deg); }
+            20% { transform: translateX(10px) rotate(10deg); }
+            30% { transform: translateX(-10px) rotate(-10deg); }
+            40% { transform: translateX(10px) rotate(10deg); }
+            50% { transform: translateX(-5px) rotate(-5deg); }
+            60% { transform: translateX(5px) rotate(5deg); }
+            70% { transform: translateX(-5px) rotate(-5deg); }
+            80% { transform: translateX(5px) rotate(5deg); }
+            90% { transform: translateX(0) rotate(0deg); }
+        }
+        .dice-face {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(145deg, #ffffff 0%, #e6e6e6 100%);
+            border-radius: 20px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.1), 0 10px 30px rgba(0,0,0,0.3);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 15px;
+        }
+        .dot {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(145deg, #333 0%, #000 100%);
+            border-radius: 50%;
+            place-self: center;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.3);
+        }
+        .dot.red {
+            background: linear-gradient(145deg, #ff6b6b 0%, #c92a2a 100%);
+        }
+        .face-1 .dot:nth-child(1) { grid-area: 2 / 2; }
+        .face-2 .dot:nth-child(1) { grid-area: 1 / 1; }
+        .face-2 .dot:nth-child(2) { grid-area: 3 / 3; }
+        .face-3 .dot:nth-child(1) { grid-area: 1 / 1; }
+        .face-3 .dot:nth-child(2) { grid-area: 2 / 2; }
+        .face-3 .dot:nth-child(3) { grid-area: 3 / 3; }
+        .face-4 .dot:nth-child(1) { grid-area: 1 / 1; }
+        .face-4 .dot:nth-child(2) { grid-area: 1 / 3; }
+        .face-4 .dot:nth-child(3) { grid-area: 3 / 1; }
+        .face-4 .dot:nth-child(4) { grid-area: 3 / 3; }
+        .face-5 .dot:nth-child(1) { grid-area: 1 / 1; }
+        .face-5 .dot:nth-child(2) { grid-area: 1 / 3; }
+        .face-5 .dot:nth-child(3) { grid-area: 2 / 2; }
+        .face-5 .dot:nth-child(4) { grid-area: 3 / 1; }
+        .face-5 .dot:nth-child(5) { grid-area: 3 / 3; }
+        .face-6 .dot:nth-child(1) { grid-area: 1 / 1; }
+        .face-6 .dot:nth-child(2) { grid-area: 1 / 3; }
+        .face-6 .dot:nth-child(3) { grid-area: 2 / 1; }
+        .face-6 .dot:nth-child(4) { grid-area: 2 / 3; }
+        .face-6 .dot:nth-child(5) { grid-area: 3 / 1; }
+        .face-6 .dot:nth-child(6) { grid-area: 3 / 3; }
+        .result {
+            margin-top: 30px;
+            font-size: 1.5em;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+        .result.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .total {
+            font-size: 2em;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 20px rgba(255,215,0,0.5);
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.1); }
+        }
+        .dice.landed {
+            animation: bounce 0.6s ease;
+        }
+    </style>
 </head>
 <body>
-  <main class="card">
-    <span class="badge">GitHub Pages</span>
-    <h1>Страница готова к статическому хостингу</h1>
-    <p>
-      Этот проект настроен для публикации на GitHub Pages. После пуша в репозиторий
-      GitHub автоматически соберёт и задеплоит статические файлы.
-    </p>
-    <ul>
-      <li>Хостинг происходит из корня репозитория.</li>
-      <li>Вся логика статическая — достаточно HTML и CSS.</li>
-      <li>Изменения видны после очередного деплоя.</li>
-    </ul>
-  </main>
+    <h1>🎲 Бросок Костей</h1>
+    <p class="subtitle">Почувствуй удачу!</p>
+    <div class="controls">
+        <div class="dice-count">
+            <label>Количество костей:</label>
+            <div class="counter">
+                <button id="minus" onclick="changeCount(-1)">−</button>
+                <span id="count">2</span>
+                <button id="plus" onclick="changeCount(1)">+</button>
+            </div>
+        </div>
+        <button class="roll-btn" id="rollBtn" onclick="rollDice()">🎲 ТРЯСТИ!</button>
+    </div>
+    <div class="dice-container" id="diceContainer"></div>
+    <div class="result" id="result">
+        <div>Сумма: <span class="total" id="total">0</span></div>
+    </div>
+    <script>
+        let diceCount = 2;
+        let isRolling = false;
+        function changeCount(delta) {
+            if (isRolling) return;
+            const newCount = diceCount + delta;
+            if (newCount >= 1 && newCount <= 6) {
+                diceCount = newCount;
+                document.getElementById('count').textContent = diceCount;
+                document.getElementById('minus').disabled = diceCount === 1;
+                document.getElementById('plus').disabled = diceCount === 6;
+                renderDice();
+            }
+        }
+        function renderDice() {
+            const container = document.getElementById('diceContainer');
+            container.innerHTML = '';
+            for (let i = 0; i < diceCount; i++) {
+                const dice = document.createElement('div');
+                dice.className = 'dice';
+                dice.id = `dice-${i}`;
+                dice.innerHTML = generateDiceFace(6);
+                container.appendChild(dice);
+            }
+            document.getElementById('result').classList.remove('show');
+        }
+        function generateDiceFace(value) {
+            let dots = '';
+            for (let i = 0; i < value; i++) {
+                const isRed = (value === 1 || value === 4);
+                dots += `<div class="dot ${isRed ? 'red' : ''}"></div>`;
+            }
+            return `<div class="dice-face face-${value}">${dots}</div>`;
+        }
+        async function rollDice() {
+            if (isRolling) return;
+            isRolling = true;
+            const btn = document.getElementById('rollBtn');
+            btn.disabled = true;
+            btn.textContent = '🎲 Крутится...';
+            const resultDiv = document.getElementById('result');
+            resultDiv.classList.remove('show');
+            const diceElements = [];
+            for (let i = 0; i < diceCount; i++) {
+                const dice = document.getElementById(`dice-${i}`);
+                dice.classList.add('rolling');
+                diceElements.push(dice);
+            }
+            const interval = setInterval(() => {
+                diceElements.forEach(dice => {
+                    const randomValue = Math.floor(Math.random() * 6) + 1;
+                    dice.innerHTML = generateDiceFace(randomValue);
+                });
+            }, 100);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            clearInterval(interval);
+            let total = 0;
+            diceElements.forEach((dice, index) => {
+                dice.classList.remove('rolling');
+                const value = Math.floor(Math.random() * 6) + 1;
+                total += value;
+                setTimeout(() => {
+                    dice.innerHTML = generateDiceFace(value);
+                    dice.classList.add('landed');
+                    setTimeout(() => dice.classList.remove('landed'), 600);
+                }, index * 100);
+            });
+            setTimeout(() => {
+                document.getElementById('total').textContent = total;
+                resultDiv.classList.add('show');
+                btn.disabled = false;
+                btn.textContent = '🎲 ТРЯСТИ!';
+                isRolling = false;
+            }, diceCount * 100 + 300);
+        }
+        renderDice();
+    </script>
 </body>
 </html>
