@@ -90,14 +90,14 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 40px;
-            min-height: 200px;
-            padding: 30px;
+            gap: 15px;
+            min-height: 120px;
+            padding: 20px;
             perspective: 1000px;
         }
         .dice {
-            width: 70px;
-            height: 70px;
+            width: 50px;
+            height: 50px;
             position: relative;
             transform-style: preserve-3d;
         }
@@ -110,25 +110,25 @@
         }
         .face {
             position: absolute;
-            width: 70px;
-            height: 70px;
+            width: 50px;
+            height: 50px;
             background: linear-gradient(145deg, #fff 0%, #e6e6e6 100%);
-            border-radius: 12px;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            box-shadow: inset 0 0 6px rgba(0,0,0,0.1);
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(3, 1fr);
-            padding: 8px;
+            padding: 5px;
         }
-        .face-front { transform: translateZ(35px); }
-        .face-back { transform: rotateY(180deg) translateZ(35px); }
-        .face-right { transform: rotateY(90deg) translateZ(35px); }
-        .face-left { transform: rotateY(-90deg) translateZ(35px); }
-        .face-top { transform: rotateX(90deg) translateZ(35px); }
-        .face-bottom { transform: rotateX(-90deg) translateZ(35px); }
+        .face-front { transform: translateZ(25px); }
+        .face-back { transform: rotateY(180deg) translateZ(25px); }
+        .face-right { transform: rotateY(90deg) translateZ(25px); }
+        .face-left { transform: rotateY(-90deg) translateZ(25px); }
+        .face-top { transform: rotateX(90deg) translateZ(25px); }
+        .face-bottom { transform: rotateX(-90deg) translateZ(25px); }
         .dot {
-            width: 12px;
-            height: 12px;
+            width: 8px;
+            height: 8px;
             background: #333;
             border-radius: 50%;
             place-self: center;
